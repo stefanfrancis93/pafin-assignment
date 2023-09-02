@@ -1,0 +1,29 @@
+version: '3'
+
+services:
+  server:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    ports:
+      - "${SERVER_PORT}:${SERVER_PORT}"
+      - "9229:9229"
+    env_file:
+      - ".env"
+    depends_on:
+      - database
+    networks:
+      - webnet
+
+  database:
+    image: postgres:latest
+    networks:
+      - webnet
+    environment:
+      POSTGRES_USER: ${DB_USERNAME}
+      POSTGRES_PASSWORD: ${DB_PASSWORD}
+      POSTGRES_DB: ${DB_DATABASE_NAME}
+    ports:
+    - "${DB_PORT}:5432"
+networks:
+  webnet:
