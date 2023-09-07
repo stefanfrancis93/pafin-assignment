@@ -1,5 +1,6 @@
 import { PrismaClient } from "@prisma/client";
 import bcrypt from "bcryptjs";
+import jwt from "jsonwebtoken";
 
 const prisma = new PrismaClient();
 
@@ -16,17 +17,38 @@ export const userService = {
       },
     });
 
-    return newUser;
+    // Removing password from response
+    const { password: _password, ...newUserWithoutPassword } = newUser;
+
+    const token = jwt.sign({ userId: 1 }, process.env.JWT_SECRET!, {
+      expiresIn: process.env.JWT_EXPIRES_IN,
+    });
+
+    return {
+      ...newUserWithoutPassword,
+      token,
+    };
   },
 
   getAllUsers: async () => {
-    const users = await prisma.user.findMany();
+    const users = await prisma.user.findMany({
+      select: {
+        password: false,
+      },
+    });
 
     return users;
   },
 
   getUserById: async (userId: number) => {
-    const user = await prisma.user.findUnique({ where: { id: userId } });
+    const user = await prisma.user.findUnique({
+      where: {
+        id: userId,
+      },
+      select: {
+        password: false,
+      },
+    });
 
     return user;
   },
@@ -38,8 +60,17 @@ export const userService = {
     password: string
   ) => {
     const updatedUser = await prisma.user.update({
-      where: { id: userId },
-      data: { name, email, password },
+      where: {
+        id: userId,
+      },
+      data: {
+        name,
+        email,
+        password,
+      },
+      select: {
+        password: false,
+      },
     });
 
     return updatedUser;
@@ -47,7 +78,12 @@ export const userService = {
 
   deleteUser: async (userId: number) => {
     const deletedUser = await prisma.user.delete({
-      where: { id: userId },
+      where: {
+        id: userId,
+      },
+      select: {
+        password: false,
+      },
     });
 
     return deletedUser;
